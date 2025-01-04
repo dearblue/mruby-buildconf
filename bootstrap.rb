@@ -396,6 +396,8 @@ refine MRuby::Gem::Specification do
         env.define_singleton_method :[], ->(var) { ENV[var] }
       end
 
+      gem = self
+
       env.singleton_class.class_eval do
         %i(defines cflags include_paths ldflags library_paths libraries objs srcs).each { |e|
           cube = []
@@ -422,17 +424,19 @@ refine MRuby::Gem::Specification do
         tool
       end
 
-      gem = self
+      env.linker.flags << self.build.linker.flags
+      env.linker.library_paths << self.build.linker.library_paths
+      env.linker.libraries << self.build.linker.libraries
 
       env.define_singleton_method :try_link, ->(code, type: ".c", defines: [], cflags: [], include_paths: [], ldflags: [], library_paths: [], libraries: []) {
         Dir.mktmpdir do |dir|
-          tool = tools.find { |e| e.source_exts.include? type }
+          cc = tools.find { |e| e.source_exts.include? type }
           src = File.join(dir, %(code#{type}))
           obj = gem.build.objfile(File.join(dir, "code"))
           exe = gem.build.exefile(File.join(dir, "code"))
           File.write src, code
 
-          if tool.try(obj, src, defines, include_paths, cflags) && env.linker.try(exe, [obj], libraries, library_paths, [], ldflags)
+          if cc.try(obj, src, defines, include_paths, cflags) && env.linker.try(exe, [obj], libraries, library_paths, [], ldflags)
             env.defines       << defines        if defines       && !defines.empty?
             env.cflags        << cflags         if cflags        && !cflags.empty?
             env.include_paths << include_paths  if include_paths && !include_paths.empty?
