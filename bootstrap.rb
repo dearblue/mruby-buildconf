@@ -569,8 +569,8 @@ refine MRuby::Gem::Specification do
       }
       if failall && abort
         fail RuntimeError, <<~ERR, trace
-          failed to configure required for #{label} in #{self.name}
-          You may need to call `gem.enable_#{label}` in the build configuration file and give it arguments to adjust.
+          failed to configure required for "#{label}" in "#{self.name}"
+          You may need to call `gem.enable_#{label}` in "#{build.name}" of the build configuration file and give it arguments to adjust.
           - - -
           #{command_message}
           - - -
