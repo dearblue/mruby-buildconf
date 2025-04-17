@@ -175,6 +175,60 @@ using Module.new {
       end
     end
   end
+
+  refine Array do
+    def prepare_defines
+      flatten
+    end
+
+    def prepare_flags
+      flatten
+    end
+
+    def prepare_paths
+      flatten
+    end
+
+    def prepare_names
+      flatten
+    end
+  end
+
+  refine Proc do
+    def prepare_defines
+      self.call.prepare_defines
+    end
+
+    def prepare_flags
+      self.call.prepare_flags
+    end
+
+    def prepare_paths
+      self.call.prepare_paths
+    end
+
+    def prepare_names
+      self.call.prepare_names
+    end
+  end
+
+  refine String do
+    def prepare_defines
+      [self]
+    end
+
+    def prepare_flags
+      [self]
+    end
+
+    def prepare_paths
+      [self]
+    end
+
+    def prepare_names
+      [self]
+    end
+  end
 }
 
 refine String do
@@ -499,6 +553,17 @@ refine MRuby::Gem::Specification do
           next false unless r.fetch(:standard, true)
           e = {}
         end
+
+        # TODO: 遅延評価用の解決を行う時機はここで正しい？処理をメソッドやタスクとしてまとめる？
+        r = r.dup
+        r[:defines] = r[:defines].prepare_defines if r.key? :defines
+        r[:cflags] = r[:cflags].prepare_flags if r.key? :cflags
+        r[:include_paths] = r[:include_paths].prepare_paths if r.key? :include_paths
+        r[:ldflags] = r[:ldflags].prepare_flags if r.key? :ldflags
+        r[:library_paths] = r[:library_paths].prepare_paths if r.key? :library_paths
+        r[:libraries] = r[:libraries].prepare_names if r.key? :libraries
+        r[:objs] = r[:objs].prepare_paths if r.key? :objs
+        r[:srcs] = r[:srcs].prepare_paths if r.key? :srcs
 
         tasting.call(env, r, **e)
       }
