@@ -586,7 +586,7 @@ refine MRuby::Gem::Specification do
         ERR
       end
 
-      #$stderr.puts command_message.gsub(/^(?!\s*$)/, "\t")
+      $stderr.puts command_message.gsub(/^(?!\s*$)/, "\t") if ENV["MRUBY_BUILDCONF_DEBUG"].to_i > 0
 
       env
     }
