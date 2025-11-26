@@ -149,25 +149,33 @@ using Module.new {
         case self[:type] || ".c"
         when ".c"
           [<<~CODE, ".c"]
-            #include <stdio.h>
+            #include <stddef.h>
             #{self[:header_files].each_with_object("") { |e, a| a << %(#include <#{e}>\n) }}
+
+            extern volatile size_t funcs;
+            volatile size_t funcs;
 
             int
             main(int argc, char *argv[])
             {
-            #{self[:functions].each_with_object("") { |e, a| a << %(  { const void *func = (const void *)#{e}; printf("%p\\n", func); }\n) }}
+              funcs = 0;
+            #{self[:functions].each_with_object("") { |e, a| a << %(  funcs ^= (size_t)(#{e});\n) }}
               return 0;
             }
           CODE
         when ".cc", ".cxx", ".cpp"
           [<<~CODE, ".cxx"]
-            #include <stdio.h>
+            #include <stddef.h>
             #{self[:header_files].each_with_object("") { |e, a| a << %(#include <#{e}>\n) }}
+
+            extern volatile size_t funcs;
+            volatile size_t funcs;
 
             int
             main(int argc, char *argv[])
             {
-            #{self[:functions].each_with_object("") { |e, a| a << %(  { const void *func = (const void *)#{e}; printf("%p\\n", func); }\n) }}
+              funcs = 0;
+            #{self[:functions].each_with_object("") { |e, a| a << %(  funcs ^= (size_t)(#{e});\n) }}
               return 0;
             }
           CODE
@@ -316,6 +324,7 @@ BUILD_TASTING = {
       %i(defines cflags include_paths ldflags library_paths libraries objs srcs).each { |e|
         env.__send__(e) << recipe[e]      unless recipe[e].empty?
       }
+      TODO "libraries が利用可能かどうかを検証する"
       return true
     end
 
