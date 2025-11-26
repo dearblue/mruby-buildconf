@@ -18,6 +18,8 @@
   standard: true,   ## 標準で有効化される。既定値。
   standard: false,  ## 標準で無効のため、variation で指定する必要がある。
 
+  ### 制限 ### srcs や objs によって参照されるソースコードからは presym が利用できない。
+
 ## 個別排他的オプション
 
   # pkgconf を使ったビルドスイッチの取得
@@ -252,10 +254,17 @@ refine MRuby::Gem::Specification.singleton_class do
 
         configcache = File.join(self.build_dir, "configure.cache")
 
+        file File.join(self.build.build_dir, "presym") => configcache
         file File.join(build_dir, "gem_init.c") => configcache
         dir.dir_glob("src/**/*") { |src| file src => configcache if File.file?(src) }
-        #MRUBY_ROOT.dir_glob("src/**/*") { |src| file src => configcache if File.file?(src) }
-        # ↑ mruby core を含めたすべてのファイルが再コンパイルすることになるので別の手段を考える
+
+        # NOTE: build.define_rules をフックすると rake clean でも設定調整実行が行われるため、この方法は行わない
+        #build.singleton_class.prepend Module.new {
+        #  define_method :define_rules, &->(*args) {
+        #    Rake::Task[configcache].invoke
+        #    super(*args)
+        #  }
+        #}
 
         task "configure" => configcache
 
